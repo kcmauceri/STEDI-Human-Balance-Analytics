@@ -15,7 +15,7 @@ spark = glueContext.spark_session
 job = Job(glueContext)
 job.init(args["JOB_NAME"], args)
 
-# 1. Read Customer Trusted Data 
+# 1. Read Customer Trusted Data (Only customers who have agreed to share their data for research)
 customer_trusted = glueContext.create_dynamic_frame.from_options(
     connection_type="s3",
     format="json",
@@ -46,14 +46,21 @@ joined_data = Join.apply(
     transformation_ctx="joined_data"
 )
 
-# 4. Select Relevant Fields for customers_curated 
-customers_curated = SelectFields.apply(
+# 4. Filter the data to ensure we only include customers who have agreed to share for research
+filtered_data = Filter.apply(
     frame=joined_data,
+    f=lambda row: (row["shareWithResearchAsOfDate"] != 0),  
+    transformation_ctx="filtered_data"
+)
+
+# 5. Select Relevant Fields for customers_curated 
+customers_curated = SelectFields.apply(
+    frame=filtered_data,
     paths=["user", "email", "customername", "serialnumber", "timestamp", "x", "y", "z"],
     transformation_ctx="customers_curated"
 )
 
-# 5. Write the curated data to the Curated Zone 
+# 6. Write the curated data to the Curated Zone
 glueContext.write_dynamic_frame.from_options(
     frame=customers_curated,
     connection_type="s3",

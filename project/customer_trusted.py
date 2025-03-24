@@ -30,7 +30,7 @@ source_dynamic_frame = glueContext.create_dynamic_frame.from_options(
 # Step 2: Filter data (apply any business logic as needed)
 filtered_dynamic_frame = Filter.apply(
     frame=source_dynamic_frame,
-    f=lambda row: (not (row["shareWithResearchAsOfDate"] == 0)),  
+    f=lambda row: row["shareWithResearchAsOfDate"] not in [None, 0, ''],  
     transformation_ctx="filtered_dynamic_frame",
 )
 
